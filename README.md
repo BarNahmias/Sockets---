@@ -152,5 +152,12 @@ function that run by thread that used to receive messages from the client and di
 ![image](https://user-images.githubusercontent.com/92825016/156647716-d92f616c-2d6d-46c5-83a6-234d394f2fd5.png)
 
  ![image](https://user-images.githubusercontent.com/92825016/156647842-c928952e-628c-4c92-ae0b-51a5222aadc2.png)
+ 
+ # lets start - 
+ **Explanatory video on running the program**
+ 
+ https://user-images.githubusercontent.com/92825016/156653418-3d851871-06af-4b1c-b9eb-20b3da39a34b.mp4
+ 
+ 
 
 
