@@ -16,8 +16,7 @@ class Client(object):
     max_seq_num = 10 # base of the sequence number og the packets
     already_connect_udp = False
     file_data = [] # buffer for the data we are receiving from the server
-    local = '127.0.0.1' #local ip adress
-    time_out = 0.01  # should do the calculation for the timeout in efficient way
+    time_out = 0.009  # should do the calculation for the timeout in efficient way
     max_buffer_size = 2 ** 16
     locked = True
 
@@ -35,18 +34,16 @@ class Client(object):
      
     """""
     def three_way_handshake(self):
-        print(self.local, self.port_to_send)
-        print(type(self.local), type(self.port_to_send))
         self.client_sock_udp.settimeout(self.time_out)
 
         while True:
             try:
-                self.client_sock_udp.sendto('SYN'.encode('utf-8'), (self.local, self.port_to_send))
+                self.client_sock_udp.sendto('SYN'.encode('utf-8'), (self.server_ip, self.port_to_send))
                 print("before recived")
                 message, adress = self.client_sock_udp.recvfrom(self.max_buffer_size)
                 print("recevied")
                 if message.decode('utf-8') == 'ACK':
-                    self.client_sock_udp.sendto('ACK'.encode('utf-8'), (self.local, self.port_to_send))
+                    self.client_sock_udp.sendto('ACK'.encode('utf-8'), (self.server_ip, self.port_to_send))
                     self.client_sock_udp.settimeout(None)
                     print("client_connect")
                     return True
@@ -77,7 +74,7 @@ class Client(object):
         start_index = 0
         end_index = 0
         if not self.connected_udp:
-            self.client_sock_udp.bind(('127.0.0.1', port_l))
+            self.client_sock_udp.bind((self.server_ip, port_l))
             bol = self.three_way_handshake()
         if bol:
             self.connected_udp = True
@@ -90,7 +87,7 @@ class Client(object):
             while real_message == 'ACK':
                 try:
                     self.client_sock_udp.settimeout(self.time_out)
-                    self.client_sock_udp.sendto('ACK'.encode('UTF-8'), (self.local, self.port_to_send))
+                    self.client_sock_udp.sendto('ACK'.encode('UTF-8'), (self.server_ip, self.port_to_send))
                     message, address = self.client_sock_udp.recvfrom(self.max_buffer_size)
                     real_message = message.decode('utf-8')
                 except:
@@ -102,7 +99,7 @@ class Client(object):
             while real_message.split(':')[0] != 'SIZE':
                 try:
                     self.client_sock_udp.settimeout(self.time_out)
-                    self.client_sock_udp.sendto('SEND_SIZE'.encode('utf-8'), (self.local, self.port_to_send))
+                    self.client_sock_udp.sendto('SEND_SIZE'.encode('utf-8'), (self.server_ip, self.port_to_send))
                     message, address = self.client_sock_udp.recvfrom(self.max_buffer_size)
                     real_message = message.decode('utf-8')
                 except:
@@ -144,10 +141,10 @@ class Client(object):
                                 user_input = input("You downloaded 40% of the file, Do you want to proceed? [yes,no]")
                         if bool_confirm:
                             if user_input == 'yes':
-                                self.client_sock_udp.sendto('PROCEED'.encode('utf-8'), (self.local, self.port_to_send))
+                                self.client_sock_udp.sendto('PROCEED'.encode('utf-8'), (self.server_ip, self.port_to_send))
                                 continue
                             elif user_input == 'no':
-                                self.client_sock_udp.sendto('NO_PROCEED'.encode('utf-8'), (self.local, self.port_to_send))
+                                self.client_sock_udp.sendto('NO_PROCEED'.encode('utf-8'), (self.server_ip, self.port_to_send))
                                 end_index = len(rcv_list) + 1
                                 break
                         else:
@@ -163,12 +160,12 @@ class Client(object):
                         break
                     temp = [i % 10 for i in range(temp_start, temp_end)]
                     if seq_num not in temp:
-                        self.client_sock_udp.sendto(f'{seq_num}'.encode('utf-8'), (self.local, self.port_to_send))
+                        self.client_sock_udp.sendto(f'{seq_num}'.encode('utf-8'), (self.server_ip, self.port_to_send))
                     else:
                         if rcv_list[(end_index - (end_index - seq_num) % self.max_seq_num)] == 0:
                             buffer_list[(end_index - (end_index - seq_num) % self.max_seq_num)] = data[1:]
                             rcv_list[(end_index - (end_index - seq_num) % self.max_seq_num)] = 1
-                            self.client_sock_udp.sendto(f'{seq_num}'.encode('utf-8'), (self.local, self.port_to_send))
+                            self.client_sock_udp.sendto(f'{seq_num}'.encode('utf-8'), (self.server_ip, self.port_to_send))
             if user_input == 'yes':
                 print("press some key to continue")
                 time.sleep(0.001)
