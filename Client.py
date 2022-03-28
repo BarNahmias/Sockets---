@@ -16,7 +16,7 @@ class Client(object):
     max_seq_num = 10 # base of the sequence number og the packets
     already_connect_udp = False
     file_data = [] # buffer for the data we are receiving from the server
-    time_out = 0.009  # should do the calculation for the timeout in efficient way
+    time_out = 0.01  # should do the calculation for the timeout in efficient way
     max_buffer_size = 2 ** 16
     locked = True
 
@@ -122,7 +122,6 @@ class Client(object):
                     break
                 finished = True
                 start_index, end_index = self.find_start_end(rcv_list)
-                print(start_index,end_index)
                 if start_index == 0 and end_index == 0:
                     break
                 for k in range(start_index, end_index):
@@ -153,7 +152,6 @@ class Client(object):
                             elif user_input == 'no':
                                 bool_confirm = True
                     seq_num = int.from_bytes(data[0:1], byteorder='big')
-                    print(f'seq_num is : {seq_num}')
                     temp_start, temp_end = self.find_start_end(rcv_list)
                     if temp_start == 0 and temp_end == 0:
                         end_index = len(rcv_list)+1

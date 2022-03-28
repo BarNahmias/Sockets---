@@ -16,13 +16,12 @@ class Server:
     we implement a RDT protocol over udp to send file using selective repeat protocol logic  
     """""
     max_packet_size = 2**16
-    time_out = 0.009 # time out for socket rcv
+    time_out = 0.01 # time out for socket rcv
     fragment_size = 500 # size of reading bytes from file each time
     seq_max = 10 # base of sequence numer packet in the sending window
     window_size = 5 # window segment size
     time_start = time.time()
-    estimated_rtt = 1.0
-    Dev_rtt = 0
+
     def __init__(self) -> None:
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #tcp socket to first connection and sending message
         self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # this option make the port avilable after client disconnect
@@ -69,7 +68,7 @@ class Server:
     after we gettting ack the "nack list" that representing the packet that still didnt got ack will be updated
     and we will move in our send window 
     """""
-    def check_ack(self, nack, start_index, end_index, precent, nick_name,time_sent,real_time_sent):
+    def check_ack(self, nack, start_index, end_index, precent, nick_name):
         while True:
             try:
                 ack, _ = self.server_sock_udp_map.get(nick_name)[2].recvfrom(self.max_packet_size)
@@ -77,15 +76,6 @@ class Server:
                 if ack.decode('utf-8') == 'SEND_SIZE':
                     self.server_sock_udp_map.get(nick_name)[2].sendto(to_send.encode('utf-8'),(self.client_ip.get(nick_name), self.server_sock_udp_map.get(nick_name)[0]))
                 for i in range(start_index, end_index):
-                    end_time = time.time()
-                    sample_rtt = (end_time - time_sent)-real_time_sent
-                    print("{:.4f}".format(sample_rtt))
-                    print(self.time_out)
-                    self.estimated_rtt = 0.875 * self.estimated_rtt + 0.125 * sample_rtt
-                    self.Dev_rtt = 0.75 * self.Dev_rtt + 0.25 * abs(sample_rtt - self.estimated_rtt)
-                    self.time_out = self.estimated_rtt + 4 * self.Dev_rtt
-
-                    # print("this is one sample"+sample_rtt,"estimated : "+self.estimated_rtt,"Dev:"+self.Dev_rtt,"time_out:"+self.time_out)
                     if i % 10 == int(ack.decode('utf-8')) % 10:
                         print(f'got ack for packet number {i}')
                         nack[i] = 1
@@ -112,8 +102,6 @@ class Server:
     def sliding_window(self, nick_name, file_name):
         start_index = 0
         end_index = 0
-        time_sent = 0.0
-        real_time_sent= 0.0
         finished = True
         precent = 0
         nack_packet = [0 for i in range(0, len(self.buffer_data.get(nick_name).get(file_name)))]
@@ -142,7 +130,6 @@ class Server:
                 packet = ind+data
                 self.server_sock_udp_map.get(nick_name)[2].sendto(packet, (self.client_ip.get(nick_name), self.server_sock_udp_map.get(nick_name)[0]))
                 self.check_ack(nack_packet, start_index, end_index, precent, nick_name)
-            first = True
             for k in range(start_index, end_index):
                 if nack_packet[k] == 0:
                     data = self.buffer_data.get(nick_name).get(file_name)[k]
@@ -150,15 +137,10 @@ class Server:
                     packet_number_help_me += 1
                     packet = ind+data
                     self.server_sock_udp_map.get(nick_name)[2].sendto(packet, (self.client_ip.get(nick_name), self.server_sock_udp_map.get(nick_name)[0]))
-                    if first:
-                        time_sent = time.time()
-                        first = False
             precent = (start_index / len(nack_packet)) * 100
-            precent = "{:.2f}".format(precent)
-            real_time_sent = time.time()-time_sent
-            print(time.time(),time_sent,time.time()-time_sent)
             self.server_sock_udp_map.get(nick_name)[2].settimeout(self.time_out)
-            self.check_ack(nack_packet, start_index, end_index, precent, nick_name,time_sent,real_time_sent)
+            precent = "{:.2f}".format(precent)
+            self.check_ack(nack_packet, start_index, end_index, precent, nick_name)
             if bool_precent and float(precent) > 40:
                 bool_precent = False
                 sent_once = False
