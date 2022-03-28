@@ -34,18 +34,20 @@ class Client(object):
      
     """""
     def three_way_handshake(self):
+        # print(self.local, self.port_to_send)
+        # print(type(self.local), type(self.port_to_send))
         self.client_sock_udp.settimeout(self.time_out)
 
         while True:
             try:
                 self.client_sock_udp.sendto('SYN'.encode('utf-8'), (self.server_ip, self.port_to_send))
-                print("before recived")
+                # print("before recived")
                 message, adress = self.client_sock_udp.recvfrom(self.max_buffer_size)
-                print("recevied")
+                # print("recevied")
                 if message.decode('utf-8') == 'ACK':
                     self.client_sock_udp.sendto('ACK'.encode('utf-8'), (self.server_ip, self.port_to_send))
                     self.client_sock_udp.settimeout(None)
-                    print("client_connect")
+                    # print("client_connect")
                     return True
             except:
                 continue
@@ -68,7 +70,6 @@ class Client(object):
     * fifth receive the file and calling to close connection function
     """""
     def udp_handler(self, port_l):
-        print("inside")
         bol = True
         finished = True
         start_index = 0
@@ -122,6 +123,7 @@ class Client(object):
                     break
                 finished = True
                 start_index, end_index = self.find_start_end(rcv_list)
+                # print(start_index,end_index)
                 if start_index == 0 and end_index == 0:
                     break
                 for k in range(start_index, end_index):
@@ -152,6 +154,7 @@ class Client(object):
                             elif user_input == 'no':
                                 bool_confirm = True
                     seq_num = int.from_bytes(data[0:1], byteorder='big')
+                    # print(f'seq_num is : {seq_num}')
                     temp_start, temp_end = self.find_start_end(rcv_list)
                     if temp_start == 0 and temp_end == 0:
                         end_index = len(rcv_list)+1
@@ -208,8 +211,8 @@ class Client(object):
                     port_num = (message[15:len(message)]).split(',')
                     port_l = port_num[0][1:len(port_num[0])]
                     port_s = port_num[1][1:len(port_num[1])]
-                    print(port_l)
-                    print(port_s)
+                    # print(port_l)
+                    # print(port_s)
                     self.port_to_send = int(port_s)
                     receive_udp_thread = threading.Thread(target=self.udp_handler, args=(int(port_l), ))
                     receive_udp_thread.start()
